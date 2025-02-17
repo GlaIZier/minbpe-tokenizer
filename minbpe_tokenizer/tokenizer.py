@@ -1,11 +1,11 @@
 from collections import Counter
-from typing import List, Iterable
+from typing import List, Iterable, Sized
 
 
 def find_freq_pair(ids: List[int]) -> (int, int):
     return Counter(zip(ids, ids[1:])).most_common(1)[0][0]
 
-def merge(ids: List[int], pair: (int, int), idx: int):
+def merge(ids: List[int], pair: (int, int), idx: int) -> Iterable[int]:
     i = 1
     new_ids = []
     while i < len(ids):
@@ -63,7 +63,7 @@ def unmerge_seq(new_ids, merges):
 def decode_unmerged(unmerged_new_ids):
     b_str = b"".join(map(int.to_bytes, unmerged_new_ids))
     return b_str.decode("utf-8", errors="replace")
-
+import pytest
 
 def decode(new_ids, merges):
     return decode_unmerged(unmerge_seq(new_ids, merges))
@@ -76,11 +76,12 @@ class Tokenizer:
         self._vocab = {}
         self._merges = {}
 
-    def encode(self, text: str) -> Iterable[int]:
+    def encode(self, text: str) -> List[int]:
         ids = list(text.encode("utf-8"))
-        encoded = []
+        encoded = ids
         for _id, pair in self._vocab.items():
-            merge(ids, pair, _id)
+            encoded = merge(encoded, pair, _id)
+        return encoded
 
     def decode(self, ids: Iterable[int]):
 
