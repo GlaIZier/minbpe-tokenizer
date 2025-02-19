@@ -63,7 +63,6 @@ def unmerge_seq(new_ids, merges):
 def decode_unmerged(unmerged_new_ids):
     b_str = b"".join(map(int.to_bytes, unmerged_new_ids))
     return b_str.decode("utf-8", errors="replace")
-import pytest
 
 def decode(new_ids, merges):
     return decode_unmerged(unmerge_seq(new_ids, merges))
@@ -83,9 +82,38 @@ class Tokenizer:
             encoded = merge(encoded, pair, _id)
         return encoded
 
-    def decode(self, ids: Iterable[int]):
+    # def _get_base_id(self, merged_id) -> List[int]:
+    #     _fully_decoded_id = []
+    #
+    #     def _get_base_ids(_merged_id):
+    #         __decoded_merge = self._vocab.get(_merged_id)
+    #         if __decoded_merge is None:
+    #             _fully_decoded_id.append(_merged_id)
+    #             return
+    #         for __decoded_id in __decoded_merge:
+    #             _get_base_ids(__decoded_id)
+    #
+    #     _get_base_ids(merged_id)
+    #     return _fully_decoded_id
 
-        pass
+    def _get_base_ids(self, merged_id, fully_decoded_id = None) -> List[int]:
+        if fully_decoded_id is None:
+            fully_decoded_id = []
+        decoded_merge = self._vocab.get(merged_id)
+        if decoded_merge is None:
+            fully_decoded_id.append(merged_id)
+            return fully_decoded_id
+        for decoded_id in decoded_merge:
+            self._get_base_ids(decoded_id, fully_decoded_id)
+
+        return fully_decoded_id
+
+    def decode(self, ids: Iterable[int]):
+        decoded_ids = []
+        for new_id in ids:
+            decoded_ids.extend(self._get_base_ids(new_id))
+        b_str = b"".join(map(int.to_bytes, decoded_ids))
+        return b_str.decode("utf-8", errors="replace")
 
     def train(self, text: str, vocab_size=4096):
         assert vocab_size > 255

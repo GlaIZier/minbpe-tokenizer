@@ -34,7 +34,16 @@ TEXT = (
 
 def test_tokenizer_encode():
     tokenizer = Tokenizer()
-    tokenizer._vocab[256] = (32, 116)
+    tokenizer._vocab[256] = (32, 116) # space t
+    tokenizer._vocab[257] = (32, 115) # space s
     encoded = tokenizer.encode(text=TEXT)
     assert len(encoded) < len(TEXT.encode("utf-8"))
+
+def test_tokenizer_decode():
+    tokenizer = Tokenizer()
+    tokenizer._vocab[256] = (32, 116) # space t
+    tokenizer._vocab[257] = (32, 115) # space s
+    encoded = tokenizer.encode(text=TEXT)
+    encoded_decoded_text = tokenizer.decode(encoded)
+    assert TEXT == encoded_decoded_text
 
