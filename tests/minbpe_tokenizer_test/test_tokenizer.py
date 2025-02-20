@@ -1,4 +1,7 @@
 import sys
+
+from minbpe_tokenizer import data
+
 print(sys.path)
 from minbpe_tokenizer.tokenizer import Tokenizer
 
@@ -44,6 +47,15 @@ def test_tokenizer_decode():
     tokenizer._vocab[256] = (32, 116) # space t
     tokenizer._vocab[257] = (32, 115) # space s
     encoded = tokenizer.encode(text=TEXT)
+    encoded_decoded_text = tokenizer.decode(encoded)
+    assert TEXT == encoded_decoded_text
+
+def test_tokenizer_train():
+    tokenizer = Tokenizer()
+    tokenizer.train(data.training_text, verbose=True)
+    encoded = tokenizer.encode(text=TEXT)
+    print(f"Len of TEXT: {len(TEXT.encode('utf-8'))}. Len of encoded TEXT: {len(encoded)}")
+    assert len(encoded) < len(TEXT.encode("utf-8"))
     encoded_decoded_text = tokenizer.decode(encoded)
     assert TEXT == encoded_decoded_text
 
