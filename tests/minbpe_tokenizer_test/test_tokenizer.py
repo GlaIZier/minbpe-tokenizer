@@ -3,7 +3,7 @@ import sys
 from minbpe_tokenizer import data
 
 print(sys.path)
-from minbpe_tokenizer.tokenizer import Tokenizer
+from minbpe_tokenizer.tokenizer import BasicTokenizer
 
 TEXT = (
     "The quick brown fox jumps over the lazy dog. It's amazing how many languages and symbols "
@@ -36,14 +36,14 @@ TEXT = (
 
 
 def test_tokenizer_encode():
-    tokenizer = Tokenizer()
+    tokenizer = BasicTokenizer()
     tokenizer._vocab[256] = (32, 116) # space t
     tokenizer._vocab[257] = (32, 115) # space s
     encoded = tokenizer.encode(text=TEXT)
     assert len(encoded) < len(TEXT.encode("utf-8"))
 
 def test_tokenizer_decode():
-    tokenizer = Tokenizer()
+    tokenizer = BasicTokenizer()
     tokenizer._vocab[256] = (32, 116) # space t
     tokenizer._vocab[257] = (32, 115) # space s
     encoded = tokenizer.encode(text=TEXT)
@@ -51,11 +51,24 @@ def test_tokenizer_decode():
     assert TEXT == encoded_decoded_text
 
 def test_tokenizer_train():
-    tokenizer = Tokenizer()
-    tokenizer.train(data.training_text, verbose=True)
+    tokenizer = BasicTokenizer()
+    # tokenizer.train(data.training_text, verbose=True)
+    tokenizer.train(data.training_text2, verbose=True, vocab_size=275)
     encoded = tokenizer.encode(text=TEXT)
     print(f"Len of TEXT: {len(TEXT.encode('utf-8'))}. Len of encoded TEXT: {len(encoded)}")
     assert len(encoded) < len(TEXT.encode("utf-8"))
     encoded_decoded_text = tokenizer.decode(encoded)
     assert TEXT == encoded_decoded_text
+
+def test_tokenizer_save(tmp_path):
+    file_path = tmp_path.joinpath("vocab.json")
+    tokenizer1 = BasicTokenizer()
+    tokenizer1.train(TEXT, verbose=False, vocab_size=275)
+    encoded1 = tokenizer1.encode(TEXT)
+    tokenizer1.save(file_path)
+    tokenizer2 = BasicTokenizer.from_file(file_path)
+    encoded2 = tokenizer2.encode(TEXT)
+    assert encoded1 == encoded2
+    assert TEXT == tokenizer2.decode(encoded2)
+
 

@@ -9,7 +9,6 @@ class Tokenizer:
 
     def __init__(self, vocab=None):
         # self._vocab = {i: i for i in range(256)}
-        print(vocab)
         self._vocab = vocab if vocab else {}
         self._merges = {}
 
@@ -30,13 +29,23 @@ class Tokenizer:
     def from_file(cls, file):
         with open(file, "r", encoding="utf-8") as f:
             vocab = json.load(f)
+        vocab = {int(idx): tuple(pair) for idx, pair in vocab.items()}
         return cls(vocab=vocab)
+
+    def print_vocab(self):
+        print("Vocab:")
+        for _id, pair in self._vocab.items():
+            try:
+                b_str = b"".join(map(int.to_bytes, pair))
+            except OverflowError as _:
+                b_str = None
+            decoded_pair = b_str.decode("utf-8", errors="replace") if b_str else "<complex pair>"
+            print(f"Id: {_id}. Byte pair: {pair}. Decoded pair: {decoded_pair}")
 
 class BasicTokenizer(Tokenizer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
 
     def _get_base_ids(self, merged_id, fully_decoded_id = None) -> List[int]:
         if fully_decoded_id is None:
@@ -59,7 +68,8 @@ class BasicTokenizer(Tokenizer):
         i = 1
         new_ids = []
         while i < len(ids):
-            if (ids[i - 1], ids[i]) == pair:
+            # if (ids[i - 1], ids[i]) == pair:
+            if ids[i - 1] == pair[0] and ids[i] == pair[1]:
                 new_ids.append(idx)
                 i += 2
             else:
@@ -92,12 +102,5 @@ class BasicTokenizer(Tokenizer):
             self._merges[freq_pair] = new_id
             ids = BasicTokenizer.merge(ids, freq_pair, new_id)
         if verbose:
-            print("Vocab:")
-            for _id, pair in self._vocab.items():
-                try:
-                    b_str = b"".join(map(int.to_bytes, pair))
-                except OverflowError as _:
-                    b_str = None
-                decoded_pair = b_str.decode("utf-8", errors="replace") if b_str else "<complex pair>"
-                print(f"Id: {_id}. Byte pair: {pair}. Decoded pair: {decoded_pair}")
+           self.print_vocab()
         return ids
