@@ -1,3 +1,4 @@
+import json
 from collections import Counter
 from typing import List, Iterable
 
@@ -6,10 +7,36 @@ from tqdm import tqdm
 
 class Tokenizer:
 
-    def __init__(self):
+    def __init__(self, vocab=None):
         # self._vocab = {i: i for i in range(256)}
-        self._vocab = {}
+        print(vocab)
+        self._vocab = vocab if vocab else {}
         self._merges = {}
+
+    def encode(self, text: str) -> List[int]:
+        raise NotImplementedError
+
+    def decode(self, ids: Iterable[int]):
+        raise NotImplementedError
+
+    def train(self, text: str, vocab_size=4096, verbose=False) -> List[int]:
+        raise NotImplementedError
+
+    def save(self, file):
+        with open(file, "w", encoding="utf-8") as f:
+            json.dump(self._vocab, f)
+
+    @classmethod
+    def from_file(cls, file):
+        with open(file, "r", encoding="utf-8") as f:
+            vocab = json.load(f)
+        return cls(vocab=vocab)
+
+class BasicTokenizer(Tokenizer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
 
     def _get_base_ids(self, merged_id, fully_decoded_id = None) -> List[int]:
         if fully_decoded_id is None:
@@ -46,7 +73,7 @@ class Tokenizer:
         ids = list(text.encode("utf-8"))
         encoded = ids
         for _id, pair in self._vocab.items():
-            encoded = Tokenizer.merge(encoded, pair, _id)
+            encoded = BasicTokenizer.merge(encoded, pair, _id)
         return encoded
 
     def decode(self, ids: Iterable[int]):
@@ -60,10 +87,10 @@ class Tokenizer:
         assert vocab_size > 255
         ids = list(text.encode("utf-8"))
         for new_id in tqdm(range(256, vocab_size)):
-            freq_pair = Tokenizer.find_freq_pair(ids)
+            freq_pair = BasicTokenizer.find_freq_pair(ids)
             self._vocab[new_id] = freq_pair
             self._merges[freq_pair] = new_id
-            ids = Tokenizer.merge(ids, freq_pair, new_id)
+            ids = BasicTokenizer.merge(ids, freq_pair, new_id)
         if verbose:
             print("Vocab:")
             for _id, pair in self._vocab.items():
