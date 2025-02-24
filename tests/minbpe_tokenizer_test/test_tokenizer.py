@@ -3,7 +3,7 @@ import sys
 from minbpe_tokenizer import data
 
 print(sys.path)
-from minbpe_tokenizer.tokenizer import BasicTokenizer
+from minbpe_tokenizer.tokenizer import BasicTokenizer, RegexTokenizer
 
 TEXT = (
     "The quick brown fox jumps over the lazy dog. It's amazing how many languages and symbols "
@@ -71,4 +71,7 @@ def test_tokenizer_save(tmp_path):
     assert encoded1 == encoded2
     assert TEXT == tokenizer2.decode(encoded2)
 
+def test_regex_tokenizer_train():
+    tokenizer = RegexTokenizer()
+    tokenizer.train(TEXT, vocab_size=275, verbose=True)
 

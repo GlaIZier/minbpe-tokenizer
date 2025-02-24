@@ -1,7 +1,9 @@
 import json
+
 from collections import Counter
 from typing import List, Iterable
 
+import regex
 from tqdm import tqdm
 
 
@@ -61,6 +63,7 @@ class BasicTokenizer(Tokenizer):
 
     @staticmethod
     def find_freq_pair(ids: List[int]) -> (int, int):
+        assert ids
         return Counter(zip(ids, ids[1:])).most_common(1)[0][0]
 
     @staticmethod
@@ -103,4 +106,37 @@ class BasicTokenizer(Tokenizer):
             ids = BasicTokenizer.merge(ids, freq_pair, new_id)
         if verbose:
            self.print_vocab()
+        return ids
+
+class RegexTokenizer(BasicTokenizer):
+
+    GPT4_SPLIT_REGEX = r"""'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+"""
+
+    def __init__(self, regex: str = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.regex = regex if regex else self.GPT4_SPLIT_REGEX
+
+    @staticmethod
+    def find_freq_pair(ids: List[List[int]]) -> (int, int):
+        assert ids
+        cnt = Counter()
+        for split in ids:
+            split_cnt = Counter(zip(split, split[1:]))
+            cnt.update(split_cnt)
+        return cnt.most_common(1)[0][0]
+
+    def train(self, text: str, vocab_size=4096, verbose=False) -> List[int]:
+        assert vocab_size > 255
+        splits = regex.findall(self.regex, text)
+        ids = list(text.encode("utf-8"))
+        list_ids = []
+        for split in splits:
+             list_ids.append(list(split.encode("utf-8")))
+        for new_id in tqdm(range(256, vocab_size)):
+            freq_pair = self.find_freq_pair(list_ids)
+            self._vocab[new_id] = freq_pair
+            self._merges[freq_pair] = new_id
+            # ids = BasicTokenizer.merge(ids, freq_pair, new_id)
+        if verbose:
+            self.print_vocab()
         return ids
