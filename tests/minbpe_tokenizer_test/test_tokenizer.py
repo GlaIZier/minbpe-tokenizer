@@ -53,7 +53,7 @@ def test_tokenizer_decode():
 def test_tokenizer_train():
     tokenizer = BasicTokenizer()
     # tokenizer.train(data.training_text, verbose=True)
-    tokenizer.train(data.training_text2, verbose=True, vocab_size=275)
+    tokenizer.train(data.training_text, verbose=True)
     encoded = tokenizer.encode(text=TEXT)
     print(f"Len of TEXT: {len(TEXT.encode('utf-8'))}. Len of encoded TEXT: {len(encoded)}")
     assert len(encoded) < len(TEXT.encode("utf-8"))
@@ -73,5 +73,10 @@ def test_tokenizer_save(tmp_path):
 
 def test_regex_tokenizer_train():
     tokenizer = RegexTokenizer()
-    tokenizer.train(TEXT, vocab_size=275, verbose=True)
+    tokenizer.train(data.training_text, vocab_size=512, verbose=True)
+    encoded = tokenizer.encode(text=TEXT)
+    print(f"Len of TEXT: {len(TEXT.encode('utf-8'))}. Len of encoded TEXT: {len(encoded)}")
+    assert len(encoded) < len(TEXT.encode("utf-8"))
+    encoded_decoded_text = tokenizer.decode(encoded)
+    assert TEXT == encoded_decoded_text
 

@@ -68,6 +68,9 @@ class BasicTokenizer(Tokenizer):
 
     @staticmethod
     def merge(ids: List[int], pair: (int, int), idx: int) -> Iterable[int]:
+        assert len(ids) > 0
+        if len(ids) == 1:
+            return ids
         i = 1
         new_ids = []
         while i < len(ids):
@@ -117,10 +120,14 @@ class RegexTokenizer(BasicTokenizer):
         self.regex = regex if regex else self.GPT4_SPLIT_REGEX
 
     @staticmethod
-    def find_freq_pair(ids: List[List[int]]) -> (int, int):
-        assert ids
+    def merge(list_ids: List[List[int]], pair: (int, int), idx: int) -> Iterable[Iterable[int]]:
+        return [BasicTokenizer.merge(split, pair, idx) for split in list_ids]
+
+    @staticmethod
+    def find_freq_pair(list_ids: List[List[int]]) -> (int, int):
+        assert list_ids
         cnt = Counter()
-        for split in ids:
+        for split in list_ids:
             split_cnt = Counter(zip(split, split[1:]))
             cnt.update(split_cnt)
         return cnt.most_common(1)[0][0]
@@ -136,7 +143,7 @@ class RegexTokenizer(BasicTokenizer):
             freq_pair = self.find_freq_pair(list_ids)
             self._vocab[new_id] = freq_pair
             self._merges[freq_pair] = new_id
-            # ids = BasicTokenizer.merge(ids, freq_pair, new_id)
+            list_ids = self.merge(list_ids, freq_pair, new_id)
         if verbose:
             self.print_vocab()
         return ids
