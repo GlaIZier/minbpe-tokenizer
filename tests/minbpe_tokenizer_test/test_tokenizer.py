@@ -50,7 +50,7 @@ def test_tokenizer_decode():
     encoded_decoded_text = tokenizer.decode(encoded)
     assert TEXT == encoded_decoded_text
 
-def test_tokenizer_train():
+def test_basic_tokenizer_train():
     tokenizer = BasicTokenizer()
     # tokenizer.train(data.training_text, verbose=True)
     tokenizer.train(data.training_text, verbose=True)
