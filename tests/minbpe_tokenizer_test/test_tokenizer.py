@@ -35,6 +35,8 @@ TEXT = (
 )
 
 
+training_text_regex_tokenizer_challenge="43ad     1498dsa3432dads   014ad   048120daad          48dadada     4a 4a 44a4a4a4a"
+
 def test_tokenizer_encode():
     tokenizer = BasicTokenizer()
     tokenizer._vocab[256] = (32, 116) # space t
@@ -73,7 +75,7 @@ def test_tokenizer_save(tmp_path):
 
 def test_regex_tokenizer_train():
     tokenizer = RegexTokenizer()
-    tokenizer.train(data.training_text, vocab_size=512, verbose=True)
+    tokenizer.train(training_text_regex_tokenizer_challenge, vocab_size=512, verbose=True)
     encoded = tokenizer.encode(text=TEXT)
     print(f"Len of TEXT: {len(TEXT.encode('utf-8'))}. Len of encoded TEXT: {len(encoded)}")
     assert len(encoded) < len(TEXT.encode("utf-8"))

@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools >= 75.8.2", "setuptools_scm>=8.2.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "minbpe-tokenizer"
+dynamic = ["version", "dependencies"]
+description = "Simple byte-pair encoding tokenizer"
+requires-python = ">=3.12"
+
+[tool.setuptools]
+package-dir = {"minbpe_tokenizer" = "minbpe_tokenizer"}
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools_scm]

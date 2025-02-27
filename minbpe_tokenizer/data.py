@@ -528,7 +528,3 @@ Aswad, Jem; Willman, Chris (November 19, 2018). "Taylor Swift Signs New Deal Wit
  McNutt 2020, p. 77.
  Hughes 2017, p. 206; Perone 2017, p. 33.
 """
-
-training_text2="""
-43ad 1498dsa3432dads 014ad 048120daad 48dadada 4a 4a 44a4a4a4a
-"""

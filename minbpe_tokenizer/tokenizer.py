@@ -64,7 +64,10 @@ class BasicTokenizer(Tokenizer):
     @staticmethod
     def find_freq_pair(ids: List[int]) -> (int, int):
         assert ids
-        return Counter(zip(ids, ids[1:])).most_common(1)[0][0]
+        try:
+            return Counter(zip(ids, ids[1:])).most_common(1)[0][0]
+        except IndexError:
+            return None
 
     @staticmethod
     def merge(ids: List[int], pair: (int, int), idx: int) -> Iterable[int]:
@@ -104,6 +107,8 @@ class BasicTokenizer(Tokenizer):
         ids = list(text.encode("utf-8"))
         for new_id in tqdm(range(256, vocab_size)):
             freq_pair = BasicTokenizer.find_freq_pair(ids)
+            if not freq_pair:
+                break
             self._vocab[new_id] = freq_pair
             self._merges[freq_pair] = new_id
             ids = BasicTokenizer.merge(ids, freq_pair, new_id)
@@ -130,17 +135,23 @@ class RegexTokenizer(BasicTokenizer):
         for split in list_ids:
             split_cnt = Counter(zip(split, split[1:]))
             cnt.update(split_cnt)
-        return cnt.most_common(1)[0][0]
+        try:
+            return cnt.most_common(1)[0][0]
+        except IndexError:
+            return None
 
     def train(self, text: str, vocab_size=4096, verbose=False) -> List[int]:
         assert vocab_size > 255
         splits = regex.findall(self.regex, text)
+        print(splits)
         ids = list(text.encode("utf-8"))
         list_ids = []
         for split in splits:
              list_ids.append(list(split.encode("utf-8")))
         for new_id in tqdm(range(256, vocab_size)):
             freq_pair = self.find_freq_pair(list_ids)
+            if not freq_pair:
+                break
             self._vocab[new_id] = freq_pair
             self._merges[freq_pair] = new_id
             list_ids = self.merge(list_ids, freq_pair, new_id)
