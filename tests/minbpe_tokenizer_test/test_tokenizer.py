@@ -1,7 +1,5 @@
 import sys
 
-from minbpe_tokenizer import data
-
 print(sys.path)
 from minbpe_tokenizer.tokenizer import BasicTokenizer, RegexTokenizer
 
@@ -54,8 +52,7 @@ def test_tokenizer_decode():
 
 def test_basic_tokenizer_train():
     tokenizer = BasicTokenizer()
-    # tokenizer.train(data.training_text, verbose=True)
-    tokenizer.train(data.training_text, verbose=True)
+    tokenizer.train()
     encoded = tokenizer.encode(text=TEXT)
     print(f"Len of TEXT: {len(TEXT.encode('utf-8'))}. Len of encoded TEXT: {len(encoded)}")
     assert len(encoded) < len(TEXT.encode("utf-8"))
@@ -75,7 +72,7 @@ def test_tokenizer_save(tmp_path):
 
 def test_regex_tokenizer_train():
     tokenizer = RegexTokenizer()
-    tokenizer.train(training_text_regex_tokenizer_challenge, vocab_size=512, verbose=True)
+    tokenizer.train(training_text_regex_tokenizer_challenge, vocab_size=512)
     encoded = tokenizer.encode(text=TEXT)
     print(f"Len of TEXT: {len(TEXT.encode('utf-8'))}. Len of encoded TEXT: {len(encoded)}")
     assert len(encoded) < len(TEXT.encode("utf-8"))

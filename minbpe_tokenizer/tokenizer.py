@@ -1,10 +1,11 @@
 import json
-
 from collections import Counter
 from typing import List, Iterable
 
 import regex
 from tqdm import tqdm
+
+from . import data
 
 
 class Tokenizer:
@@ -102,7 +103,7 @@ class BasicTokenizer(Tokenizer):
         b_str = b"".join(map(int.to_bytes, decoded_ids))
         return b_str.decode("utf-8", errors="replace")
 
-    def train(self, text: str, vocab_size=4096, verbose=False) -> List[int]:
+    def train(self, text: str = data.training_text, vocab_size=4096, verbose=False) -> List[int]:
         assert vocab_size > 255
         ids = list(text.encode("utf-8"))
         for new_id in tqdm(range(256, vocab_size)):
@@ -140,10 +141,9 @@ class RegexTokenizer(BasicTokenizer):
         except IndexError:
             return None
 
-    def train(self, text: str, vocab_size=4096, verbose=False) -> List[int]:
+    def train(self, text: str = data.training_text, vocab_size=4096, verbose=False) -> List[int]:
         assert vocab_size > 255
         splits = regex.findall(self.regex, text)
-        print(splits)
         ids = list(text.encode("utf-8"))
         list_ids = []
         for split in splits:
