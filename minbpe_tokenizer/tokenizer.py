@@ -8,12 +8,7 @@ from tqdm import tqdm
 from . import data
 
 
-class Tokenizer:
-
-    def __init__(self, vocab=None):
-        # self._vocab = {i: i for i in range(256)}
-        self._vocab = vocab if vocab else {}
-        self._merges = {}
+class TokenizerInterface():
 
     def encode(self, text: str) -> List[int]:
         raise NotImplementedError
@@ -23,6 +18,14 @@ class Tokenizer:
 
     def train(self, text: str, vocab_size=4096, verbose=False) -> List[int]:
         raise NotImplementedError
+
+
+class Tokenizer(TokenizerInterface):
+
+    def __init__(self, vocab=None):
+        # self._vocab = {i: i for i in range(256)}
+        self._vocab = vocab if vocab else {}
+        self._merges = {}
 
     def save(self, file):
         with open(file, "w", encoding="utf-8") as f:
