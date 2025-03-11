@@ -1,7 +1,7 @@
 import sys
 
 print(sys.path)
-from minbpe_tokenizer.tokenizer import BasicTokenizer, RegexTokenizer
+from minbpe_tokenizer.tokenizer import BasicTokenizer, RegexTokenizer, SpecialTokenizer
 
 TEXT = (
     "The quick brown fox jumps over the lazy dog. It's amazing how many languages and symbols "
@@ -79,3 +79,11 @@ def test_regex_tokenizer_train():
     encoded_decoded_text = tokenizer.decode(encoded)
     assert TEXT == encoded_decoded_text
 
+
+def test_special_tokenizer_split_str():
+    res = SpecialTokenizer._split_text("<start> 1 22 333 <pad> <pad><end>", {"<start>", "<pad>", "<end>"})
+    assert res == ["<start>", " 1 22 333 ", "<pad>", " ", "<pad>", "<end>"]
+
+def test_special_tokenizer_split_ids():
+    res = SpecialTokenizer._split_ids([100, 100, 1, 2, 3, 3, 101, 101, 101, 102], {100, 101, 102})
+    assert res == [[100], [100], [1, 2, 3, 3], [101], [101], [101], [102]]

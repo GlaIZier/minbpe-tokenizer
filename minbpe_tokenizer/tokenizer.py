@@ -1,12 +1,12 @@
 import json
+import re
 from collections import Counter
-from typing import List, Iterable
+from typing import List, Iterable, Tuple, Any
 
 import regex
 from tqdm import tqdm
 
 from . import data
-
 
 class TokenizerInterface():
 
@@ -22,10 +22,13 @@ class TokenizerInterface():
 
 class Tokenizer(TokenizerInterface):
 
+    START_BYTE = 256
+
     def __init__(self, vocab=None):
         # self._vocab = {i: i for i in range(256)}
-        self._vocab = vocab if vocab else {}
-        self._merges = {}
+        # to remove?
+        # self._merges: dict = {}
+        self._vocab: dict[int, Tuple[int, int]] = vocab if vocab else {}
 
     def save(self, file):
         with open(file, "w", encoding="utf-8") as f:
@@ -107,14 +110,14 @@ class BasicTokenizer(Tokenizer):
         return b_str.decode("utf-8", errors="replace")
 
     def train(self, text: str = data.training_text, vocab_size=4096, verbose=False) -> List[int]:
-        assert vocab_size > 255
+        assert vocab_size >= Tokenizer.START_BYTE
         ids = list(text.encode("utf-8"))
-        for new_id in tqdm(range(256, vocab_size)):
+        for new_id in tqdm(range(Tokenizer.START_BYTE, vocab_size)):
             freq_pair = BasicTokenizer.find_freq_pair(ids)
             if not freq_pair:
                 break
             self._vocab[new_id] = freq_pair
-            self._merges[freq_pair] = new_id
+            # self._merges[freq_pair] = new_id
             ids = BasicTokenizer.merge(ids, freq_pair, new_id)
         if verbose:
            self.print_vocab()
@@ -145,19 +148,75 @@ class RegexTokenizer(BasicTokenizer):
             return None
 
     def train(self, text: str = data.training_text, vocab_size=4096, verbose=False) -> List[int]:
-        assert vocab_size > 255
+        assert vocab_size >= self.START_BYTE
         splits = regex.findall(self.regex, text)
         ids = list(text.encode("utf-8"))
         list_ids = []
         for split in splits:
              list_ids.append(list(split.encode("utf-8")))
-        for new_id in tqdm(range(256, vocab_size)):
+        for new_id in tqdm(range(self.START_BYTE, vocab_size)):
             freq_pair = self.find_freq_pair(list_ids)
             if not freq_pair:
                 break
             self._vocab[new_id] = freq_pair
-            self._merges[freq_pair] = new_id
+            # self._merges[freq_pair] = new_id
             list_ids = self.merge(list_ids, freq_pair, new_id)
         if verbose:
             self.print_vocab()
         return ids
+
+
+class SpecialTokenizer(TokenizerInterface):
+
+    def __init__(self, tokenizer: Tokenizer):
+        assert tokenizer
+        self._tokenizer = tokenizer
+        start_id = Tokenizer.START_BYTE + len(tokenizer._vocab)
+        self._special_vocab = {start_id: "<pad>", start_id + 1: "<start>", start_id + 2: "<end>"}
+        self._special_vocab_inverted = {v: k for k, v in self._special_vocab.items()}
+
+    @staticmethod
+    def _split_text(text: str, separators: set[str]) -> list[str]:
+        regex_sep = r"(" + r"|".join(separators) + r")"
+        return [s for s in re.split(regex_sep, text) if s != ""]
+
+    @staticmethod
+    def _split_ids(ids: Iterable[int], separators: set[int]) -> list[list[int]]:
+        list_of_list = []
+        _list = []
+        for _id in ids:
+            if _id in separators:
+                if _list:
+                    list_of_list.append(_list)
+                    _list = []
+                list_of_list.append([_id])
+            else:
+                _list.append(_id)
+        if _list:
+            list_of_list.append(_list)
+        return list_of_list
+
+    def encode(self, text: str) -> List[int]:
+        separators = set(self._special_vocab.values())
+        texts = self._split_text(text, separators)
+        ids = []
+        for text in texts:
+            if text in separators:
+                ids.append(self._special_vocab_inverted[text])
+            else:
+                ids.extend(self._tokenizer.encode(text))
+        return ids
+
+    def decode(self, ids: Iterable[int]):
+        separators = set(self._special_vocab.keys())
+        ids_list = self._split_ids(ids, separators)
+        text = ""
+        for ids in ids_list:
+            if ids[0] in separators:
+                text += self._special_vocab[ids[0]]
+            else:
+                text += self._tokenizer.decode(ids)
+        return text
+
+    def train(self, text: str, vocab_size=4096, verbose=False) -> List[int]:
+        raise NotImplementedError
