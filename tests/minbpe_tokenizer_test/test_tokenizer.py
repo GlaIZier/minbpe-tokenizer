@@ -87,3 +87,32 @@ def test_special_tokenizer_split_str():
 def test_special_tokenizer_split_ids():
     res = SpecialTokenizer._split_ids([100, 100, 1, 2, 3, 3, 101, 101, 101, 102], {100, 101, 102})
     assert res == [[100], [100], [1, 2, 3, 3], [101], [101], [101], [102]]
+
+def test_special_tokenizer_encode():
+    tokenizer = BasicTokenizer()
+    tokenizer._vocab[256] = (32, 116)  # space t
+    tokenizer._vocab[257] = (32, 115)  # space s
+    special_tokenizer = SpecialTokenizer(tokenizer)
+    encoded = special_tokenizer.encode(text="<start>abc<pad> t s kf s<pad><pad><end>")
+    assert encoded == [259, 97, 98, 99, 258, 256, 257, 32, 107, 102, 257, 258, 258, 260]
+
+
+def test_special_tokenizer_decode():
+    tokenizer = BasicTokenizer()
+    tokenizer._vocab[256] = (32, 116) # space t
+    tokenizer._vocab[257] = (32, 115) # space s
+    special_tokenizer = SpecialTokenizer(tokenizer)
+    text = "<start>abc<pad> t s kf s<pad><pad><end>"
+    encoded = special_tokenizer.encode(text=text)
+    encoded_decoded_text = special_tokenizer.decode(encoded)
+    assert text== encoded_decoded_text
+
+def test_special_tokenizer_train():
+    tokenizer = RegexTokenizer()
+    special_tokenizer = SpecialTokenizer(tokenizer)
+    tokenizer.train(training_text_regex_tokenizer_challenge, vocab_size=512)
+    encoded = tokenizer.encode(text=TEXT)
+    print(f"Len of TEXT: {len(TEXT.encode('utf-8'))}. Len of encoded TEXT: {len(encoded)}")
+    assert len(encoded) < len(TEXT.encode("utf-8"))
+    encoded_decoded_text = tokenizer.decode(encoded)
+    assert TEXT == encoded_decoded_text

@@ -219,4 +219,14 @@ class SpecialTokenizer(TokenizerInterface):
         return text
 
     def train(self, text: str, vocab_size=4096, verbose=False) -> List[int]:
-        raise NotImplementedError
+        assert vocab_size >= Tokenizer.START_BYTE + len(self._special_vocab)
+        _vocab_size = vocab_size - len(self._special_vocab)
+        ids = self._tokenizer.train(text=text, vocab_size=_vocab_size, verbose=verbose)
+        new_special_vocab = {}
+        for i, _id, token in enumerate(self._special_vocab.items()):
+            new_special_vocab[_vocab_size + i + 1] = token
+            self._special_vocab_inverted[token] = _vocab_size + i + 1
+        self._special_vocab = new_special_vocab
+        if verbose:
+            print(self._special_vocab)
+        return ids
