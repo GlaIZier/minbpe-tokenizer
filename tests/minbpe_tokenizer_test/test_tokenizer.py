@@ -1,7 +1,7 @@
 import sys
 
 print(sys.path)
-from minbpe_tokenizer.tokenizer import BasicTokenizer, RegexTokenizer, SpecialTokenizer
+from minbpe_tokenizer.tokenizer import BasicTokenizer, RegexTokenizer, SpecialTokenizer, Tokenizer
 
 TEXT = (
     "The quick brown fox jumps over the lazy dog. It's amazing how many languages and symbols "
@@ -110,9 +110,18 @@ def test_special_tokenizer_decode():
 def test_special_tokenizer_train():
     tokenizer = RegexTokenizer()
     special_tokenizer = SpecialTokenizer(tokenizer)
-    tokenizer.train(training_text_regex_tokenizer_challenge, vocab_size=512)
-    encoded = tokenizer.encode(text=TEXT)
-    print(f"Len of TEXT: {len(TEXT.encode('utf-8'))}. Len of encoded TEXT: {len(encoded)}")
-    assert len(encoded) < len(TEXT.encode("utf-8"))
+    special_tokenizer.train(TEXT, vocab_size=384)
+    encoded = tokenizer.encode(text=training_text_regex_tokenizer_challenge)
+    print(f"Len of TEXT: {len(training_text_regex_tokenizer_challenge.encode('utf-8'))}. "
+          f"Len of encoded TEXT: {len(encoded)}")
+    assert len(encoded) < len(training_text_regex_tokenizer_challenge.encode("utf-8"))
     encoded_decoded_text = tokenizer.decode(encoded)
-    assert TEXT == encoded_decoded_text
+    assert training_text_regex_tokenizer_challenge == encoded_decoded_text
+    text = "<start>hi<pad><pad><end>"
+    encoded = special_tokenizer.encode(text)
+    assert encoded == [382, 104, 105, 381, 381, 383]
+    assert text == special_tokenizer.decode(encoded)
+
+def test_default_trained():
+   special_tokenizer = SpecialTokenizer.default_trained(vocab_size=280, tokenizer=RegexTokenizer())
+   assert len(special_tokenizer) == 280

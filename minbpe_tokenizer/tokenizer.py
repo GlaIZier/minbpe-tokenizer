@@ -19,6 +19,12 @@ class TokenizerInterface():
     def train(self, text: str, vocab_size=4096, verbose=False) -> List[int]:
         raise NotImplementedError
 
+    @classmethod
+    def default_trained(cls, vocab_size=384, *args, **kwargs):
+        tokenizer = cls(*args, **kwargs)
+        tokenizer.train(data.training_text, vocab_size)
+        return tokenizer
+
 
 class Tokenizer(TokenizerInterface):
 
@@ -50,6 +56,10 @@ class Tokenizer(TokenizerInterface):
                 b_str = None
             decoded_pair = b_str.decode("utf-8", errors="replace") if b_str else "<complex pair>"
             print(f"Id: {_id}. Byte pair: {pair}. Decoded pair: {decoded_pair}")
+
+    def __len__(self):
+        # vocab size doesn't take into account 0x00 byte. Main vocab len = 255 (1-255)
+        return self.START_BYTE + len(self._vocab)
 
 class BasicTokenizer(Tokenizer):
 
@@ -220,13 +230,21 @@ class SpecialTokenizer(TokenizerInterface):
 
     def train(self, text: str, vocab_size=4096, verbose=False) -> List[int]:
         assert vocab_size >= Tokenizer.START_BYTE + len(self._special_vocab)
+        for s in self._special_vocab.values():
+            assert s not in text
+
         _vocab_size = vocab_size - len(self._special_vocab)
         ids = self._tokenizer.train(text=text, vocab_size=_vocab_size, verbose=verbose)
+        # vocab can be smaller if training text is not enough to fill vocab
+        special_vocab_start = len(self._tokenizer)
         new_special_vocab = {}
-        for i, _id, token in enumerate(self._special_vocab.items()):
-            new_special_vocab[_vocab_size + i + 1] = token
-            self._special_vocab_inverted[token] = _vocab_size + i + 1
+        for i, (_id, token) in enumerate(self._special_vocab.items()):
+            new_special_vocab[special_vocab_start + i] = token
+            self._special_vocab_inverted[token] = special_vocab_start + i
         self._special_vocab = new_special_vocab
         if verbose:
             print(self._special_vocab)
         return ids
+
+    def __len__(self):
+        return len(self._tokenizer) + len(self._special_vocab)
