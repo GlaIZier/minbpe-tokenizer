@@ -178,11 +178,15 @@ class RegexTokenizer(BasicTokenizer):
 
 class SpecialTokenizer(TokenizerInterface):
 
+    PAD_TOKEN = "<pad>"
+    START_TOKEN = "<start>"
+    END_TOKEN = "<end>"
+
     def __init__(self, tokenizer: Tokenizer):
         assert tokenizer
         self._tokenizer = tokenizer
         start_id = Tokenizer.START_BYTE + len(tokenizer._vocab)
-        self._special_vocab = {start_id: "<pad>", start_id + 1: "<start>", start_id + 2: "<end>"}
+        self._special_vocab = {start_id: self.PAD_TOKEN, start_id + 1: self.START_TOKEN, start_id + 2: self.END_TOKEN}
         self._special_vocab_inverted = {v: k for k, v in self._special_vocab.items()}
 
     @staticmethod
@@ -206,7 +210,7 @@ class SpecialTokenizer(TokenizerInterface):
             list_of_list.append(_list)
         return list_of_list
 
-    def encode(self, text: str) -> List[int]:
+    def _encode(self, text: str) -> List[int]:
         separators = set(self._special_vocab.values())
         texts = self._split_text(text, separators)
         ids = []
@@ -215,6 +219,21 @@ class SpecialTokenizer(TokenizerInterface):
                 ids.append(self._special_vocab_inverted[text])
             else:
                 ids.extend(self._tokenizer.encode(text))
+        return ids
+
+    def encode(self, text: str, start: bool = False, end: bool = False, pad: bool = False, max_len: int = 512):
+        # max_len only matters if pad = True
+        _ids = self._encode(text=text)
+        ids = []
+        if start and _ids[0] != self._special_vocab_inverted[self.START_TOKEN]:
+            ids.append(self._special_vocab_inverted[self.START_TOKEN])
+        ids.extend(_ids)
+        if pad and ids[-1] != self._special_vocab_inverted[self.END_TOKEN]:
+            pad_length = max_len - len(ids) - 1 if end else max_len - len(ids)
+            if pad_length > 0:
+                ids += pad_length * [self._special_vocab_inverted[self.PAD_TOKEN]]
+        if end and ids[-1] != self._special_vocab_inverted[self.END_TOKEN]:
+            ids.append(self._special_vocab_inverted[self.END_TOKEN])
         return ids
 
     def decode(self, ids: Iterable[int]):

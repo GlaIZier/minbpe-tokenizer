@@ -89,13 +89,22 @@ def test_special_tokenizer_split_ids():
     assert res == [[100], [100], [1, 2, 3, 3], [101], [101], [101], [102]]
 
 def test_special_tokenizer_encode():
-    tokenizer = BasicTokenizer()
+    tokenizer = RegexTokenizer()
     tokenizer._vocab[256] = (32, 116)  # space t
     tokenizer._vocab[257] = (32, 115)  # space s
     special_tokenizer = SpecialTokenizer(tokenizer)
     encoded = special_tokenizer.encode(text="<start>abc<pad> t s kf s<pad><pad><end>")
     assert encoded == [259, 97, 98, 99, 258, 256, 257, 32, 107, 102, 257, 258, 258, 260]
+    encoded = special_tokenizer.encode(text="abc t s kf")
+    assert encoded == [97, 98, 99, 256, 257, 32, 107, 102]
 
+def test_special_tokenizer_encode_special():
+    tokenizer = RegexTokenizer()
+    tokenizer._vocab[256] = (32, 116)  # space t
+    tokenizer._vocab[257] = (32, 115)  # space s
+    special_tokenizer = SpecialTokenizer(tokenizer)
+    encoded = special_tokenizer.encode(text="abc t s kf s", start=True, end=True, pad=True, max_len=13)
+    assert encoded == [259, 97, 98, 99, 256, 257, 32, 107, 102, 257, 258, 258, 260]
 
 def test_special_tokenizer_decode():
     tokenizer = BasicTokenizer()
@@ -106,6 +115,9 @@ def test_special_tokenizer_decode():
     encoded = special_tokenizer.encode(text=text)
     encoded_decoded_text = special_tokenizer.decode(encoded)
     assert text== encoded_decoded_text
+    text = "abc t s kf"
+    assert text == special_tokenizer.decode(special_tokenizer.encode(text=text))
+
 
 def test_special_tokenizer_train():
     tokenizer = RegexTokenizer()
